@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:todo_app/add_task.dart';
 import 'package:todo_app/todo_list_tile.dart';
 
 void main() {
@@ -67,11 +68,45 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(child: MyExpansionPanel()),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        tooltip: 'Increment',
+        onPressed: () async {
+          // Navigate to the AddTaskScreen and wait for a result (new task).
+
+          List<String>? res = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddTask()),
+          );
+          print(res);
+          print('-------------------------------------------------');
+          String? newTask = res?[0], newDesc = res?[1];
+          // Handle the new task (if any) returned from the AddTaskScreen.
+          if (newTask != null) {
+            addNew(newTask, newDesc);
+          }
+        },
+        tooltip: 'Add Task',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  void addNew(String newTask, String? newDesc) async {
+    print(
+        "===================================================================================================================================================in addNew methon===========================================================================================================================================");
+    Map<String, dynamic> dataToUpdate = {
+      'title': newTask,
+      'description': newDesc,
+      'completed': false
+    };
+
+    // Convert the data to JSON
+    String jsonData = jsonEncode(dataToUpdate);
+    final response = await http
+        .post(Uri.parse('http://10.0.2.2:8080/api/todos'), body: jsonData);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          '========================Failed to create task===================');
+    }
   }
 }
 
@@ -91,7 +126,7 @@ class _MyExpansionPanelState extends State<MyExpansionPanel> {
       print(data.toString() + "===================================");
       return data.map((item) {
         return PanelItemModel(
-            item['title'], item['description'], item['completed']);
+            item['id'], item['title'], item['description'], item['completed']);
       }).toList();
     } else {
       throw Exception('Failed to load data');
@@ -110,19 +145,22 @@ class _MyExpansionPanelState extends State<MyExpansionPanel> {
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else {
-          return CircularProgressIndicator();
+          return const CircularProgressIndicator();
         }
       },
     );
   }
+
+  // saving final state
 }
 
 class PanelItemModel {
+  final int id;
   final String title;
   final String? description;
   bool isExpanded;
   bool completed;
 
-  PanelItemModel(this.title, this.description, this.completed,
+  PanelItemModel(this.id, this.title, this.description, this.completed,
       {this.isExpanded = false});
 }
