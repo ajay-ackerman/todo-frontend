@@ -35,7 +35,9 @@ class _TodoListTileState extends State<TodoListTile> {
                     SizedBox(width: 8), // Adjust spacing as needed
                     Checkbox(
                       value: item.completed,
-                      onChanged: (bool? value) {
+                      onChanged: (bool? value) async {
+                        item.completed = !item.completed;
+                        await updateItemInDatabase(item);
                         setState(() {
                           item.completed = value ?? false;
                         });
@@ -55,7 +57,10 @@ class _TodoListTileState extends State<TodoListTile> {
                       onPressed: () async {
                         var id = item.id;
                         final response = await http.delete(
-                            Uri.parse('http://10.0.2.2:8080/api/todos/$id'));
+                            Uri.parse('http://10.0.2.2:8080/api/todos/$id'),
+                            headers: <String, String>{
+                              'Content-Type': 'application/json; charset=UTF-8',
+                            });
                         if (response.statusCode != 200) {
                           throw Exception(
                               '========================Failed to update data===================');
@@ -77,17 +82,7 @@ class _TodoListTileState extends State<TodoListTile> {
     );
   }
 
-  @override
-  void dispose() {
-    // Save the final state of items in the database
-    for (PanelItemModel item in widget.items) {
-      updateItemInDatabase(item);
-    }
-
-    super.dispose();
-  }
-
-  void updateItemInDatabase(PanelItemModel item) async {
+  Future<void> updateItemInDatabase(PanelItemModel item) async {
     Map<String, dynamic> dataToUpdate = {
       'completed': item.completed,
     };
@@ -99,6 +94,9 @@ class _TodoListTileState extends State<TodoListTile> {
     var id = item.id;
     final response = await http.put(
       Uri.parse('http://10.0.2.2:8080/api/todos/$id'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
       body: jsonData,
     );
     if (response.statusCode != 200) {

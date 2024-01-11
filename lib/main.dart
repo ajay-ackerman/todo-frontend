@@ -78,18 +78,18 @@ class _MyHomePageState extends State<MyHomePage> {
           print(res);
           print('-------------------------------------------------');
           String? newTask = res?[0], newDesc = res?[1];
-          // Handle the new task (if any) returned from the AddTaskScreen.
+
           if (newTask != null) {
-            addNew(newTask, newDesc);
+            await addNew(newTask, newDesc);
           }
         },
         tooltip: 'Add Task',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 
-  void addNew(String newTask, String? newDesc) async {
+  Future<void> addNew(String newTask, String? newDesc) async {
     print(
         "===================================================================================================================================================in addNew methon===========================================================================================================================================");
     Map<String, dynamic> dataToUpdate = {
@@ -97,11 +97,16 @@ class _MyHomePageState extends State<MyHomePage> {
       'description': newDesc,
       'completed': false
     };
+    print("randwa $newTask");
 
     // Convert the data to JSON
     String jsonData = jsonEncode(dataToUpdate);
-    final response = await http
-        .post(Uri.parse('http://10.0.2.2:8080/api/todos'), body: jsonData);
+    final response =
+        await http.post(Uri.parse('http://10.0.2.2:8080/api/todos'),
+            headers: <String, String>{
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: jsonData);
 
     if (response.statusCode != 200) {
       throw Exception(
